@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib import colors
 import numpy as np
-
+import math
 class Coordinate:
   def __init__(self, x, y):
     self.x = x
@@ -15,14 +15,12 @@ wdir = 'input.txt'
     result[2...m][0...j]: Coordinates of vertices of a polygon
 """
 
-
 def readInput(filepath): 
     result=[]
     count = 0
     with open(filepath) as fp:
        line = fp.readline()
        while line:
-
            line =line.replace('\n','')
            line =line.replace(' ','')
            listCoord = line.split(',')
@@ -33,7 +31,7 @@ def readInput(filepath):
            result.append([])
            for x in range(0, len(listCoord)):
                if(x+1< size and x%2==0):
-                   result[count].append(Coordinate(int(listCoord[x]),int(listCoord[x+1])))
+                   result[count].append(Coordinate(int(listCoord[x+1]),int(listCoord[x])))
            count+=1
     
            line = fp.readline()
@@ -44,17 +42,117 @@ def readInput(filepath):
     
 """
 def makeDataSet(dataCoord):
-    width = dataRead[0][0].x
-    heigh = dataRead[0][0].y
+    width = dataRead[0][0].y
+    heigh = dataRead[0][0].x
     data = np.ones((heigh, width)) * np.nan
     
     for i in range(1,len(dataCoord)):
-        for j in range(len(dataCoord[i])):
-            data[dataCoord[i][j].y][dataCoord[i][j].x] = i
-    
+        size = len(dataCoord[i]);
+        for j in range(size):
+            data[dataCoord[i][j].x][dataCoord[i][j].y] = int(i)
+        if (i>1):
+            min_x, min_y , max_x, max_y = findRectangle(dataCoord[i])
+            for x in range(min_x,max_x+1):
+                for y in range(min_y, max_y+1):
+                    if(point_inside_polygon(x,y,dataCoord[i])==True):
+                        data[x][y]=i
+            for j in range(size-1):
+                plotLine(data,dataCoord[i][j],dataCoord[i][j+1],i)
+            plotLine(data, dataCoord[i][size-1], dataCoord[i][0],i)
     return width, heigh, data
             
-###################################################################
+"""
+    Draw a line: 
+    Source: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm?fbclid=IwAR0TiBG42hKE7Xi3IfoWshVTgltjWdE8utajs4fWc_sGcrZWrj7nO09uQtY
+"""
+def plotLine(data,fromCoord,toCoord,index):
+    x0,y0 = fromCoord.x, fromCoord.y
+    x1,y1 = toCoord.x, toCoord.y
+
+    if abs(y1 - y0) < abs(x1 - x0):
+        if x0 > x1:
+          plotLineLow(data,toCoord, fromCoord,index)
+        else:
+          plotLineLow(data,fromCoord, toCoord,index)
+    else:
+        if y0 > y1:
+          plotLineHigh(data,toCoord, fromCoord,index)
+        else:
+          plotLineHigh(data,fromCoord, toCoord,index)
+          
+def plotLineLow(data,fromCoord,toCoord,index):
+    x0,y0 = fromCoord.x, fromCoord.y
+    x1,y1 = toCoord.x, toCoord.y
+    dx = x1 - x0
+    dy = y1 - y0
+    yi = 1
+    if dy < 0:
+        yi = -1
+        dy = -dy
+    D = 2*dy - dx
+    y = y0
+
+    for x in range(x0, x1):
+            data[x][y]=index
+            if D > 0:
+               y = y + yi
+               D = D - 2*dx
+            D = D + 2*dy
+def plotLineHigh(data,fromCoord,toCoord,index):
+    x0,y0 = fromCoord.x, fromCoord.y
+    x1,y1 = toCoord.x, toCoord.y
+    dx = x1 - x0
+    dy = y1 - y0
+    xi = 1
+    if dx < 0:
+        xi = -1
+        dx = -dx
+    D = 2*dx - dy
+    x = x0
+
+    for y in range(y0, y1):
+            data[x][y]=index
+            if D > 0:
+               x = x + xi
+               D = D - 2*dx
+            D = D + 2*dx
+            
+"""
+    Decide a given coordinate is inside a polygon
+    Source: http://www.ariel.com.au/a/python-point-int-poly.html
+"""
+
+def point_inside_polygon(x,y,poly):
+
+    n = len(poly)
+    inside =False
+
+    p1x,p1y = poly[0].x, poly[0].y
+    for i in range(n+1):
+        p2x,p2y = poly[i % n].x,poly[i % n].y
+        if y > min(p1y,p2y):
+            if y <= max(p1y,p2y):
+                if x <= max(p1x,p2x):
+                    if p1y != p2y:
+                        xinters = (y-p1y)*(p2x-p1x)/float((p2y-p1y))+p1x
+                    if p1x == p2x or x <= xinters:
+                        inside = not inside
+        p1x,p1y = p2x,p2y
+    return inside
+
+"""
+    find the bottom-left point and top-right point
+    
+"""
+
+def findRectangle(poly):
+    listX= []
+    listY= []
+    for i in range(len(poly)):
+        listX.append(poly[i].x)
+        listY.append(poly[i].y)
+    return min(listX),min(listY),max(listX),max(listY)
+  #################################################################
 """
     test ket qua
 """
@@ -87,8 +185,19 @@ ax.set_yticks(np.arange(0, heigh+1, 1));
 ax.grid(which='both')
 
 
-ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, 22, 0, 18],origin='lower',norm = norm)
+ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, width, 0, heigh],origin='lower',norm = norm)
 
 
 plt.gcf().set_size_inches((10, 10))    
 plt.show()
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
