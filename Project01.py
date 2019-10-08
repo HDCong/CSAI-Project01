@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib import colors
 import numpy as np
-import math
+
 class Coordinate:
   def __init__(self, x, y):
     self.x = x
