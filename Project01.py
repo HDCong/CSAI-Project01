@@ -3,6 +3,8 @@ from matplotlib import colors
 import numpy as np
 from Coordinate import Coordinate
 from Polygon import Polygon
+import queue
+import math
 
 wdir = 'input.txt'
 
@@ -190,21 +192,15 @@ def BFS_Algorithm(width, height, start, end, data):
 
     return result
 
-"""
-    test ket qua
-"""
 
-if __name__ == "__main__":
-    dataRead = read_input(wdir)
-    width, heigh, data = makeDataSet(dataRead)
-
+def draw(width, heigh, data):
     fig, ax = plt.subplots(1, 1, tight_layout=False)
 
-    my_cmap = colors.ListedColormap(['r', 'b', 'y', 'g', 'c'])
+    my_cmap = colors.ListedColormap(["red", "orange", "gold", "limegreen", "k","#550011", "purple", "seagreen"])
 
     my_cmap.set_bad(color='w', alpha=0)
 
-    bounds = [0, 1, 2, 3, 4, 5, 6]
+    bounds = [0, 1, 2, 3, 4, 5, 6,7,8,9,10]
 
     norm = colors.BoundaryNorm(bounds, my_cmap.N)
 
@@ -223,3 +219,20 @@ if __name__ == "__main__":
 
     plt.gcf().set_size_inches((10, 10))
     plt.show()
+def fillPathToGrid(data, path, dataInput):
+    color = int(len(dataInput)+1)
+    for i in range(1,len(path)-1):
+        data[list[i].x][list[i].y]= color
+        
+"""
+    test ket qua
+"""       
+if __name__ == "__main__":
+    dataRead = read_input(wdir)
+    width, heigh, dataSet = makeDataSet(dataRead)
+    
+    list = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1], dataSet)
+
+    fillPathToGrid(dataSet,list,dataRead)
+
+    draw(width, heigh, dataSet)
