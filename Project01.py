@@ -123,6 +123,72 @@ def plotLineHigh(data, fromCoord, toCoord, index):
             D = D - 2 * dx
         D = D + 2 * dx
 
+#######################################################################
+
+"""
+    Algorithms
+"""
+
+
+# BFS 
+###################################################################
+
+def isValidPoint(width, height, data, point):
+  # check if point is out of range permission
+    if point.x<1 or point.y<1 or point.y>=width or point.x>=height:
+        return False 
+  # check if destination
+    if data[point.x][point.y] == 1:
+        return True
+  # check if point is object
+    if not math.isnan(data[point.x][point.y]):
+        return False
+  # default
+    return True
+
+def getPath(start, loc, parent):
+    path = []
+    backtrack = loc
+    while backtrack != start:
+        path.append(backtrack)
+        backtrack = parent[backtrack.x][backtrack.y]
+    path.append(start)
+    path.reverse()
+    return path
+
+def BFS_Algorithm(width, height, start, end, data):
+  # init
+    # shortest path result
+    result = []
+    # list of visited points
+    visited = [[False for y in range(width)] for x in range(height)]
+    # list of parents
+    parent = [[start for y in range(width)] for x in range(height)]
+
+    y = [0, 1, 1, 1, 0, -1, -1, -1]
+    x = [1, 1, 0, -1, -1, -1, 0, 1]
+
+    q = queue.Queue(maxsize=0)
+    q.put(start)
+    visited[start.x][start.y] = True
+
+  # implement
+    while(not q.empty()):
+        loc = q.get()
+        if loc.x == end.x and loc.y == end.y:
+            result = getPath(start, loc, parent)
+            break
+        else:
+            for i in range(8):
+                newX = loc.x + x[i]
+                newY = loc.y + y[i]
+                point = Coordinate(int(newX), int(newY))
+                if isValidPoint(width, height, data, point) and visited[newX][newY] == False:
+                    q.put(point)
+                    parent[newX][newY] = loc
+                    visited[newX][newY] = True
+
+    return result
 
 """
     test ket qua
