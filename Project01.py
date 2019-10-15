@@ -127,6 +127,7 @@ def plotLineHigh(data, fromCoord, toCoord, index):
 
 #######################################################################
 
+
 """
     Algorithms
 """
@@ -136,18 +137,21 @@ def plotLineHigh(data, fromCoord, toCoord, index):
 #                             BFS                                 #
 ###################################################################
 """
+
+
 def isValidPoint(width, height, data, point):
-  # check if point is out of range permission
+    # check if point is out of range permission
     if point.x<0 or point.y<0 or point.y>=width or point.x>=height:
         return False 
-  # check if destination
+    # check if destination
     if data[point.x][point.y] == 1:
         return True
-  # check if point is object
+    # check if point is object
     if not math.isnan(data[point.x][point.y]):
         return False
-  # default
+    # default
     return True
+
 
 def getPath(start, loc, parent):
     path = []
@@ -158,6 +162,7 @@ def getPath(start, loc, parent):
     path.append(start)
     path.reverse()
     return path
+
 
 def BFS_Algorithm(width, height, start, end, data):
   # init
@@ -193,9 +198,22 @@ def BFS_Algorithm(width, height, start, end, data):
 
     return result
 
+
+"""
+    Greedy Best First Search
+"""
+
+def GBFS_Algorithm(polys, start, end):
+    open_set = []  # Tap chua cac dinh da mo
+    visited = []   # Tap chua cac dinh da tham
+
+
+
 """
     Heuristic
 """
+
+
 class Successor:
     def __init__(self,parrent=None,coord=None):
         self.parrent = parrent
@@ -207,6 +225,7 @@ class Successor:
     def __eq__(self, another):
         return self.coord == another.coord
 
+
 def findSuccessor(theList):
     successor = theList[0]
     idx =0 
@@ -216,10 +235,12 @@ def findSuccessor(theList):
             idx = i
     return successor, idx
 
+
 def isDiagonal(newStep, parrent):
-    if(newStep.coord.x - parrent.coord.x)* (newStep.coord.y - parrent.coord.y)!=0:
+    if(newStep.coord.x - parrent.coord.x) * (newStep.coord.y - parrent.coord.y) != 0:
         return True
     return False
+
 
 def findPathHeuristic(start,goal,data):
     width = dataRead[0][0].y
@@ -287,6 +308,8 @@ def findPathHeuristic(start,goal,data):
                if successor == openedSuccessor and successor.g > openedSuccessor.g:
                    continue
            openList.append(successor)
+
+
 """ 
     Level 3
 """          
@@ -310,6 +333,7 @@ def getSubPath(start, loc, parent):
     path.reverse()
     return path
 
+
 def isInPath(point, Path):
     for path in Path:
         for p in path:
@@ -317,20 +341,24 @@ def isInPath(point, Path):
                 return True
     return False
 
+
 def clearQueue(queue):
     while not queue.empty():
         queue.get()
+
 
 def removePoint(point, l):
     for p in l:
         if p.x == point.x and p.y == point.y:
             l.remove(p)
 
+
 def isPointInSet(point, s):
     for p in s:
         if point.x == p.x and point.y == p.y:
             return True
     return False
+
 
 def findPath(width, height, start, end, data, points):
     path = []
@@ -381,6 +409,7 @@ def findPath(width, height, start, end, data, points):
 
     return path
 
+
 def findPathPassAllPoints(width, height, dataRead, dataset):
     points = getPoints(dataRead)
 
@@ -395,11 +424,14 @@ def findPathPassAllPoints(width, height, dataRead, dataset):
 def drawDataToGrid(data,width, heigh):
     fig, ax = plt.subplots(1, 1, tight_layout=False)
 
-    my_cmap = colors.ListedColormap(['r', 'b', '#F7DC6F', 'g',"#A9CCE3","#B03A2E","#9B59B6","#2980B9","#1ABC9C","#27AE60"
-                                     ,"#F39C12","#EDBB99","#D0ECE7","#EBDEF0","#A9CCE3","#EBDEF0","#EBEDEF"])
+    my_cmap = colors.ListedColormap(['r', 'b', '#F7DC6F', 'g'
+                                        , "#A9CCE3", "#B03A2E", "#9B59B6"
+                                        , "#2980B9", "#1ABC9C", "#27AE60"
+                                        , "#F39C12", "#EDBB99", "#D0ECE7"
+                                        , "#EBDEF0", "#A9CCE3", "#EBDEF0", "#EBEDEF"])
     my_cmap.set_bad(color='w', alpha=0)
 
-    bounds = [0, 1, 2, 3, 4, 5, 6,7,8,9,10,11,12,13,14,15,16,17,18]
+    bounds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 
     norm = colors.BoundaryNorm(bounds, my_cmap.N)
 
@@ -418,11 +450,13 @@ def drawDataToGrid(data,width, heigh):
 
     plt.gcf().set_size_inches((10, 10))
     plt.show()
-    
-def fillPathToData(path, data,dataRead):
+
+
+def fillPathToData(path, data, dataRead):
     color = int(len(dataRead))
     for i in range(1,len(path)-1):
-        data[path[i].x][path[i].y]  = color
+        data[path[i].x][path[i].y] = color
+
 """
     test
 """
@@ -432,22 +466,22 @@ if __name__ == "__main__":
     '''bfs'''
     dataRead = read_input(wdir)
     width, heigh, data = makeDataSet(dataRead)
-    path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
-    #path ,cost = findPathHeuristic(dataRead[1][0], dataRead[1][1],data)
+    path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1], data)
+    # path ,cost = findPathHeuristic(dataRead[1][0], dataRead[1][1],data)
     
-    fillPathToData(path,data,dataRead)
+    fillPathToData(path, data, dataRead)
     
-    drawDataToGrid(data,width, heigh)
+    drawDataToGrid(data, width, heigh)
 
     ''' heuristic'''
     dataRead2 = read_input(wdir)
     width, heigh, data2 = makeDataSet(dataRead2)
-    #path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
-    path2 ,cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1],data2)
+    # path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
+    path2, cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1],data2)
     
-    fillPathToData(path2,data2,dataRead2)
+    fillPathToData(path2, data2, dataRead2)
     
-    drawDataToGrid(data2,width, heigh)
+    drawDataToGrid(data2, width, heigh)
    
     ''' level 3'''
     dataRead3 = read_input('input2.txt')
@@ -459,5 +493,5 @@ if __name__ == "__main__":
         fillPathToData(points,data3,dataRead3)
     
     drawDataToGrid(data3,width3, heigh3)
-   # for i in range(len(path)):
-    #    print(path[i].y, path[i].x, cost[i])
+    # for i in range(len(path)):
+    # print(path[i].y, path[i].x, cost[i])
