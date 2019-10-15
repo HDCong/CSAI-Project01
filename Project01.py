@@ -131,10 +131,11 @@ def plotLineHigh(data, fromCoord, toCoord, index):
     Algorithms
 """
 
-
-# BFS 
+"""
 ###################################################################
-
+#                             BFS                                 #
+###################################################################
+"""
 def isValidPoint(width, height, data, point):
   # check if point is out of range permission
     if point.x<0 or point.y<0 or point.y>=width or point.x>=height:
@@ -286,7 +287,111 @@ def findPathHeuristic(start,goal,data):
                if successor == openedSuccessor and successor.g > openedSuccessor.g:
                    continue
            openList.append(successor)
+""" 
+    Level 3
+"""          
+###################################################################
+#      Find route from Start to End visits all given points       #
+###################################################################
+def getPoints(dataRead):
+    points = []
+    for i in range(2, len(dataRead[1].points)):
+        points.append(dataRead[1][i])
+    return points
 
+def getSubPath(start, loc, parent):
+    path = []
+    backtrack = loc
+    while backtrack != start:
+        path.append(backtrack)
+        backtrack = parent[backtrack.x][backtrack.y]
+
+    path.append(start)
+    path.reverse()
+    return path
+
+def isInPath(point, Path):
+    for path in Path:
+        for p in path:
+            if point.x == p.x and point.y == p.y:
+                return True
+    return False
+
+def clearQueue(queue):
+    while not queue.empty():
+        queue.get()
+
+def removePoint(point, l):
+    for p in l:
+        if p.x == point.x and p.y == point.y:
+            l.remove(p)
+
+def isPointInSet(point, s):
+    for p in s:
+        if point.x == p.x and point.y == p.y:
+            return True
+    return False
+
+def findPath(width, height, start, end, data, points):
+    path = []
+
+    begin = start
+
+    visited = [[False for y in range(width)] for x in range(height)]
+    # list of parents
+    parent = [[start for y in range(width)] for x in range(height)]
+
+    # cho phep di cheo 
+    y = [0, 1, 1, 1, 0, -1, -1, -1]
+    x = [1, 1, 0, -1, -1, -1, 0, 1] 
+
+    # khong cho phep di cheo
+    # y = [0, 1, 0, -1]
+    # x = [1, 0, -1, 0]
+
+    lenLoop = len(y)
+
+    q = queue.Queue(maxsize=0)
+    q.put(start)
+    visited[start.x][start.y] = True
+
+    while(not q.empty()):
+        loc = q.get()
+
+        if isPointInSet(loc, points):
+            path.append(getSubPath(begin, loc, parent))
+            begin = loc
+            removePoint(loc, points)
+            clearQueue(q)
+            q.put(loc)
+            visited = [[False for y in range(width)] for x in range(height)]
+        else:
+            if loc.x == end.x and loc.y == end.y and len(points) == 0:
+                path.append(getSubPath(begin, loc, parent))
+                break
+            else:
+                for i in range(lenLoop):
+                    newX = loc.x + x[i]
+                    newY = loc.y + y[i]
+                    point = Coordinate(int(newX), int(newY))
+                    if isValidPoint(width, height, data, point) and visited[newX][newY] == False and not isInPath(point, path):
+                        q.put(point)
+                        parent[newX][newY] = loc
+                        visited[newX][newY] = True
+
+    return path
+
+def findPathPassAllPoints(width, height, dataRead, dataset):
+    points = getPoints(dataRead)
+
+    start = dataRead[1][0]
+    end = dataRead[1][1]
+
+    path = findPath(width, height, start, end, dataset, points)
+
+    return path
+
+# essential functions 
 def drawDataToGrid(data,width, heigh):
     fig, ax = plt.subplots(1, 1, tight_layout=False)
 
@@ -323,6 +428,8 @@ def fillPathToData(path, data,dataRead):
 """
 
 if __name__ == "__main__":
+    
+    '''bfs'''
     dataRead = read_input(wdir)
     width, heigh, data = makeDataSet(dataRead)
     path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
@@ -332,7 +439,7 @@ if __name__ == "__main__":
     
     drawDataToGrid(data,width, heigh)
 
-
+    ''' heuristic'''
     dataRead2 = read_input(wdir)
     width, heigh, data2 = makeDataSet(dataRead2)
     #path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
@@ -341,6 +448,16 @@ if __name__ == "__main__":
     fillPathToData(path2,data2,dataRead2)
     
     drawDataToGrid(data2,width, heigh)
+   
+    ''' level 3'''
+    dataRead3 = read_input('input2.txt')
+    width3, heigh3, data3 = makeDataSet(dataRead3)
 
+    path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
+    
+    for points in path3:
+        fillPathToData(points,data3,dataRead3)
+    
+    drawDataToGrid(data3,width3, heigh3)
    # for i in range(len(path)):
     #    print(path[i].y, path[i].x, cost[i])
