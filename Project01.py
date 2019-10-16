@@ -1,10 +1,11 @@
-import matplotlib.pyplot as plt
 from matplotlib import colors
-import numpy as np
 from Coordinate import Coordinate
 from Polygon import Polygon
 import queue
 import math
+import numpy as np
+import functools
+import matplotlib.pyplot as plt
 
 wdir = 'input.txt'
 
@@ -125,6 +126,7 @@ def plotLineHigh(data, fromCoord, toCoord, index):
             D = D - 2 * dx
         D = D + 2 * dx
 
+
 #######################################################################
 
 
@@ -141,8 +143,8 @@ def plotLineHigh(data, fromCoord, toCoord, index):
 
 def isValidPoint(width, height, data, point):
     # check if point is out of range permission
-    if point.x<0 or point.y<0 or point.y>=width or point.x>=height:
-        return False 
+    if point.x < 0 or point.y < 0 or point.y >= width or point.x >= height:
+        return False
     # check if destination
     if data[point.x][point.y] == 1:
         return True
@@ -165,7 +167,7 @@ def getPath(start, loc, parent):
 
 
 def BFS_Algorithm(width, height, start, end, data):
-  # init
+    # init
     # shortest path result
     result = []
     # list of visited points
@@ -180,10 +182,10 @@ def BFS_Algorithm(width, height, start, end, data):
     q.put(start)
     visited[start.x][start.y] = True
 
-  # implement
-    while(not q.empty()):
+    # implement
+    while not q.empty():
         loc = q.get()
-        if loc==end:
+        if loc == end:
             result = getPath(start, loc, parent)
             break
         else:
@@ -191,7 +193,7 @@ def BFS_Algorithm(width, height, start, end, data):
                 newX = loc.x + x[i]
                 newY = loc.y + y[i]
                 point = Coordinate(int(newX), int(newY))
-                if isValidPoint(width, height, data, point) and visited[newX][newY] == False:
+                if isValidPoint(width, height, data, point) and not visited[newX][newY]:
                     q.put(point)
                     parent[newX][newY] = loc
                     visited[newX][newY] = True
@@ -203,10 +205,36 @@ def BFS_Algorithm(width, height, start, end, data):
     Greedy Best First Search
 """
 
-def GBFS_Algorithm(polys, start, end):
-    open_set = []  # Tap chua cac dinh da mo
-    visited = []   # Tap chua cac dinh da tham
 
+def GBFS_Algorithm(polys, start: Coordinate, end: Coordinate, width: int, height: int, data):
+    open_set = []  # Tap chua cac dinh da mo
+    visited = []  # Tap chua cac dinh da tham
+    start.parentNode = None
+    start.h = start.Heuristic(end)
+    open_set.append(start)
+
+    while open_set:
+        v = min(open_set, key=lambda x: x.h)  # Su dung thuat toan tham lam lay diem cok heuristic nho nhat
+        if v == end:
+            path = []
+            while v:
+                path.append(v)
+                v = v.parentNode
+            return path[::-1]
+
+        open_set.remove(v)
+        visited.append(v)
+
+        u: Coordinate = None
+        for u in v.nearPossibleNode(polys, functools.partial(isValidPoint, width, height, data)):
+            if u in visited:
+                continue
+
+            if u not in open_set:
+                u.h = u.Heuristic(end)
+                u.parentNode = v
+                open_set.append(u)
+    return None
 
 
 """
@@ -215,20 +243,22 @@ def GBFS_Algorithm(polys, start, end):
 
 
 class Successor:
-    def __init__(self,parrent=None,coord=None):
+    def __init__(self, parrent=None, coord=None):
         self.parrent = parrent
-        self.coord= coord
-        ## value of a successor f = g + h
-        self.g =0
-        self.h =0
+        self.coord = coord
+
+        # Value of a successor f = g + h
+        self.g = 0
+        self.h = 0
         self.f = 0
+
     def __eq__(self, another):
         return self.coord == another.coord
 
 
 def findSuccessor(theList):
     successor = theList[0]
-    idx =0 
+    idx = 0
     for i in range(1, len(theList)):
         if theList[i].f < successor.f:
             successor = theList[i]
@@ -237,38 +267,37 @@ def findSuccessor(theList):
 
 
 def isDiagonal(newStep, parrent):
-    if(newStep.coord.x - parrent.coord.x) * (newStep.coord.y - parrent.coord.y) != 0:
+    if (newStep.coord.x - parrent.coord.x) * (newStep.coord.y - parrent.coord.y) != 0:
         return True
     return False
 
 
-def findPathHeuristic(start,goal,data):
+def findPathHeuristic(start, goal, data):
     width = dataRead[0][0].y
     height = dataRead[0][0].x
     # initialize open and close list
     openList = []
-    closeList= []
-    
+    closeList = []
+
     # Create base successor
-    startSuccessor = Successor(None,start)
+    startSuccessor = Successor(None, start)
 
-    goalSuccessor = Successor(None,goal)
-
+    goalSuccessor = Successor(None, goal)
 
     moveY = [0, 1, 1, 1, 0, -1, -1, -1]
     moveX = [1, 1, 0, -1, -1, -1, 0, 1]
     # Add start scucessor to open list
     openList.append(startSuccessor)
 
-    while len(openList) > 0 : # not empty
+    while len(openList) > 0:  # not empty
         # Find successor with min-f value
-        q, qIdx= findSuccessor(openList)
+        q, qIdx = findSuccessor(openList)
         # pop q off list
         openList.pop(qIdx)
         closeList.append(q)
         # if found goal 
         if q == goalSuccessor:
-            path=[]
+            path = []
             current = q
             cost = []
             cost.append(q.g)
@@ -276,43 +305,45 @@ def findPathHeuristic(start,goal,data):
                 path.append(current.coord)
                 cost.append(current.g)
                 current = current.parrent;
-            return path[::-1],cost[::-1]
-        
+            return path[::-1], cost[::-1]
+
         # Generate possible successor of q
-        successorList = [] 
+        successorList = []
         for i in range(8):
             possibleCoord = Coordinate(q.coord.x + moveX[i], q.coord.y + moveY[i])
             # check if the coordinate is in the grid and walkable
-            if(isValidPoint(width, height,data,possibleCoord)==False):
+            if not isValidPoint(width, height, data, possibleCoord):
                 continue
             possibleSuccessor = Successor(q, possibleCoord)
             successorList.append(possibleSuccessor)
-        
-        for successor in successorList:
-           for closedSuccessor in closeList:
-               if successor == closedSuccessor:
-                   continue
 
-           if(isDiagonal(successor,q))==True:
-               successor.g = q.g + 1.5
-           else:
-               successor.g = q.g + 1 
-              ##  h = max { abs(current_cell.x – goal.x),abs(current_cell.y – goal.y) } 
-           successor.h = ((successor.coord.x - goal.x) ** 2) + ((successor.coord.y - goal.y) ** 2)
-#           delta_x= successor.coord.x - goal.x
-#           delta_y=successor.coord.y - goal.y
-#           successor.h = min(delta_x, delta_y) * math.sqrt(2) + abs(delta_x - delta_y)
-           successor.f = successor.g + successor.h
-           
-           for openedSuccessor in openList:
-               if successor == openedSuccessor and successor.g > openedSuccessor.g:
-                   continue
-           openList.append(successor)
+        for successor in successorList:
+            for closedSuccessor in closeList:
+                if successor == closedSuccessor:
+                    continue
+
+            if isDiagonal(successor, q):
+                successor.g = q.g + 1.5
+            else:
+                successor.g = q.g + 1
+                # h = max { abs(current_cell.x – goal.x),abs(current_cell.y – goal.y) }
+            successor.h = ((successor.coord.x - goal.x) ** 2) + ((successor.coord.y - goal.y) ** 2)
+            #           delta_x= successor.coord.x - goal.x
+            #           delta_y=successor.coord.y - goal.y
+            #           successor.h = min(delta_x, delta_y) * math.sqrt(2) + abs(delta_x - delta_y)
+            successor.f = successor.g + successor.h
+
+            for openedSuccessor in openList:
+                if successor == openedSuccessor and successor.g > openedSuccessor.g:
+                    continue
+            openList.append(successor)
 
 
 """ 
     Level 3
-"""          
+"""
+
+
 ###################################################################
 #      Find route from Start to End visits all given points       #
 ###################################################################
@@ -321,6 +352,7 @@ def getPoints(dataRead):
     for i in range(2, len(dataRead[1].points)):
         points.append(dataRead[1][i])
     return points
+
 
 def getSubPath(start, loc, parent):
     path = []
@@ -371,7 +403,7 @@ def findPath(width, height, start, end, data, points):
 
     # cho phep di cheo 
     y = [0, 1, 1, 1, 0, -1, -1, -1]
-    x = [1, 1, 0, -1, -1, -1, 0, 1] 
+    x = [1, 1, 0, -1, -1, -1, 0, 1]
 
     # khong cho phep di cheo
     # y = [0, 1, 0, -1]
@@ -383,7 +415,7 @@ def findPath(width, height, start, end, data, points):
     q.put(start)
     visited[start.x][start.y] = True
 
-    while(not q.empty()):
+    while not q.empty():
         loc = q.get()
 
         if isPointInSet(loc, points):
@@ -402,7 +434,8 @@ def findPath(width, height, start, end, data, points):
                     newX = loc.x + x[i]
                     newY = loc.y + y[i]
                     point = Coordinate(int(newX), int(newY))
-                    if isValidPoint(width, height, data, point) and visited[newX][newY] == False and not isInPath(point, path):
+                    if isValidPoint(width, height, data, point) and visited[newX][newY] == False and not isInPath(point,
+                                                                                                                  path):
                         q.put(point)
                         parent[newX][newY] = loc
                         visited[newX][newY] = True
@@ -420,8 +453,9 @@ def findPathPassAllPoints(width, height, dataRead, dataset):
 
     return path
 
-# essential functions 
-def drawDataToGrid(data,width, heigh):
+
+# essential functions
+def drawDataToGrid(data, width, heigh):
     fig, ax = plt.subplots(1, 1, tight_layout=False)
 
     my_cmap = colors.ListedColormap(['r', 'b', '#F7DC6F', 'g'
@@ -454,44 +488,48 @@ def drawDataToGrid(data,width, heigh):
 
 def fillPathToData(path, data, dataRead):
     color = int(len(dataRead))
-    for i in range(1,len(path)-1):
+    for i in range(1, len(path) - 1):
         data[path[i].x][path[i].y] = color
+
 
 """
     test
 """
 
 if __name__ == "__main__":
-    
-    '''bfs'''
-    dataRead = read_input(wdir)
-    width, heigh, data = makeDataSet(dataRead)
-    path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1], data)
-    # path ,cost = findPathHeuristic(dataRead[1][0], dataRead[1][1],data)
-    
-    fillPathToData(path, data, dataRead)
-    
-    drawDataToGrid(data, width, heigh)
 
-    ''' heuristic'''
+    # BFS - Breadth First Search
+    dataRead = read_input(wdir)
+    width, height, data = makeDataSet(dataRead)
+    path = BFS_Algorithm(width, height, dataRead[1][0], dataRead[1][1], data)
+    # path ,cost = findPathHeuristic(dataRead[1][0], dataRead[1][1],data)
+    fillPathToData(path, data, dataRead)
+    drawDataToGrid(data, width, height)
+
+    # GBFS - Greedy Best First Search
+    dataRead1 = read_input(wdir)
+    width, height, data = makeDataSet(dataRead1)
+    path = GBFS_Algorithm(dataRead1[2:], dataRead1[1][0], dataRead1[1][1], width, height, data)
+    fillPathToData(path, data, dataRead)
+    drawDataToGrid(data, width, height)
+
+    # Heuristic
     dataRead2 = read_input(wdir)
     width, heigh, data2 = makeDataSet(dataRead2)
     # path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
-    path2, cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1],data2)
-    
+    path2, cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1], data2)
     fillPathToData(path2, data2, dataRead2)
-    
     drawDataToGrid(data2, width, heigh)
-   
+
     ''' level 3'''
     dataRead3 = read_input('input2.txt')
     width3, heigh3, data3 = makeDataSet(dataRead3)
 
     path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
-    
+
     for points in path3:
-        fillPathToData(points,data3,dataRead3)
-    
-    drawDataToGrid(data3,width3, heigh3)
+        fillPathToData(points, data3, dataRead3)
+
+    drawDataToGrid(data3, width3, heigh3)
     # for i in range(len(path)):
     # print(path[i].y, path[i].x, cost[i])
