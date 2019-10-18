@@ -1,9 +1,13 @@
 from Polygon import Polygon
 
+
 class Coordinate:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
+    def __repr__(self):
+        return f'({self.x}, {self.y})'
 
     def __eq__(self, another):
         """
@@ -15,7 +19,7 @@ class Coordinate:
     def distance(self, point):
         return ((self.x - point.x) ** 2 + (self.y - point.y) ** 2) ** 0.5
 
-    def Heuristic(self, goal, how = "distance"):
+    def Heuristic(self, goal, how="distance"):
         """
         :param goal: goal point need to go
         :param how: function calculate Heuristic value from cur point to goal point
@@ -48,4 +52,13 @@ class Coordinate:
                     res.remove(nearNode)
                     break
         return res
+
+    def getCoord(self):
+        return self.x, self.y
+
+    def updateCoord(self, delta_x, delta_y):
+        self.x = self.x + delta_x
+        self.y = self.y + delta_y
+
+
 

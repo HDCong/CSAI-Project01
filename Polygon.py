@@ -13,6 +13,24 @@ class Polygon:
     def __getitem__(self, item):
         return self.points[item]
 
+    def moveLeft(self):
+        for point in self.points:
+            point.updateCoord(-1, 0)
+        return self
+
+    def moveRight(self):
+        for point in self.points:
+            point.updateCoord(1, 0)
+        return self
+
+    def moveUp(self):
+        for point in self.points:
+            point.updateCoord(0, 1)
+
+    def moveDown(self):
+        for point in self.points:
+            point.updateCoord(0, -1)
+
     """
         Decide a given coordinate is inside a polygon
         Source: http://www.ariel.com.au/a/python-point-int-poly.html
@@ -46,4 +64,3 @@ class Polygon:
             list_x.append(self.points[i].x)
             list_y.append(self.points[i].y)
         return min(list_x), min(list_y), max(list_x), max(list_y)
-
