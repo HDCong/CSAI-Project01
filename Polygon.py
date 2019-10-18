@@ -12,7 +12,19 @@ class Polygon:
 
     def __getitem__(self, item):
         return self.points[item]
-
+    
+    def moveLeft(self):
+        for point in self.points:
+            point.updateCoord(-1, 0)
+    def moveRight(self):
+        for point in self.points:
+            point.updateCoord(1, 0)    
+    def moveUp(self):
+        for point in self.points:
+            point.updateCoord(0, 1)
+    def moveDown(self):
+        for point in self.points:
+            point.updateCoord(0, -1)
     """
         Decide a given coordinate is inside a polygon
         Source: http://www.ariel.com.au/a/python-point-int-poly.html
