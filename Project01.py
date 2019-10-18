@@ -554,6 +554,8 @@ if __name__ == "__main__":
     #movePolygons(dataRead, data,width, heigh)
     #ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, width, 0, heigh], origin='lower', norm=norm)
 
+
+
   #  plt.gcf().set_size_inches((10, 10))
     ' chuyen dong va tim duong dong thoi voi nhau'
     count = 0

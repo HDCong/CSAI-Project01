@@ -46,7 +46,6 @@ class Polygon:
                             inside = not inside
             p1x, p1y = p2x, p2y
         return inside
-
     """
         find the bottom-left point and top-right point    
     """
