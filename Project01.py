@@ -4,12 +4,13 @@ import numpy as np
 from Coordinate import Coordinate
 from Polygon import Polygon
 import queue
-import math
+#import math
+import random 
 
 wdir = 'input.txt'
 
 """    
-    result[0][0]: size, result[0][0].x  = width, result[0][0].y = heigh
+    result[0][0]: size, result[0][0].y  = width, result[0][0].x = heigh
     result[1][0...n]: Coordinates of points to cross
     result[2...m][0...j]: Coordinates of vertices of a polygon
 """
@@ -33,7 +34,6 @@ def read_input(filepath):
                 if x + 1 < size and x % 2 == 0:
                     result[count].append_point(Coordinate(int(list_coord[x + 1]), int(list_coord[x])))
             count += 1
-
             line = fp.readline()
     return result
 
@@ -144,7 +144,7 @@ def isValidPoint(width, height, data, point):
     if data[point.x][point.y] == 1:
         return True
   # check if point is object
-    if not math.isnan(data[point.x][point.y]):
+    if not np.isnan(data[point.x][point.y]):
         return False
   # default
     return True
@@ -168,8 +168,8 @@ def BFS_Algorithm(width, height, start, end, data):
     # list of parents
     parent = [[start for y in range(width)] for x in range(height)]
 
-    y = [0, 1, 1, 1, 0, -1, -1, -1]
-    x = [1, 1, 0, -1, -1, -1, 0, 1]
+    y = [0, -1, 1, 0, 1, -1, 1, -1]
+    x = [1, 0, 0, -1, -1, -1, 1, 1]
 
     q = queue.Queue(maxsize=0)
     q.put(start)
@@ -255,7 +255,7 @@ def findPathHeuristic(start,goal,data):
                 path.append(current.coord)
                 cost.append(current.g)
                 current = current.parrent;
-            return path[::-1],cost[::-1]
+            return path[::-1],cost
         
         # Generate possible successor of q
         successorList = [] 
@@ -264,25 +264,27 @@ def findPathHeuristic(start,goal,data):
             # check if the coordinate is in the grid and walkable
             if(isValidPoint(width, height,data,possibleCoord)==False):
                 continue
+            # if possilbe , create new successor with its coord
             possibleSuccessor = Successor(q, possibleCoord)
+            
             successorList.append(possibleSuccessor)
         
+        # check if in the close list
         for successor in successorList:
            for closedSuccessor in closeList:
                if successor == closedSuccessor:
                    continue
-
+           # value of diagonal is 1.5
            if(isDiagonal(successor,q))==True:
                successor.g = q.g + 1.5
            else:
                successor.g = q.g + 1 
-              ##  h = max { abs(current_cell.x – goal.x),abs(current_cell.y – goal.y) } 
+
+            # heuristic is: (x-xG)^2 + ( y-yG)^2
            successor.h = ((successor.coord.x - goal.x) ** 2) + ((successor.coord.y - goal.y) ** 2)
-#           delta_x= successor.coord.x - goal.x
-#           delta_y=successor.coord.y - goal.y
-#           successor.h = min(delta_x, delta_y) * math.sqrt(2) + abs(delta_x - delta_y)
+            # f= g + h
            successor.f = successor.g + successor.h
-           
+           # check if it in the openlist and openlist has f value < its f value
            for openedSuccessor in openList:
                if successor == openedSuccessor and successor.g > openedSuccessor.g:
                    continue
@@ -342,8 +344,8 @@ def findPath(width, height, start, end, data, points):
     parent = [[start for y in range(width)] for x in range(height)]
 
     # cho phep di cheo 
-    y = [0, 1, 1, 1, 0, -1, -1, -1]
-    x = [1, 1, 0, -1, -1, -1, 0, 1] 
+    y = [0, -1, 1, 0, 1, -1, 1, -1]
+    x = [1, 0, 0, -1, -1, -1, 1, 1]
 
     # khong cho phep di cheo
     # y = [0, 1, 0, -1]
@@ -393,6 +395,7 @@ def findPathPassAllPoints(width, height, dataRead, dataset):
 
 # essential functions 
 def drawDataToGrid(data,width, heigh):
+    
     fig, ax = plt.subplots(1, 1, tight_layout=False)
 
     my_cmap = colors.ListedColormap(['r', 'b', '#F7DC6F', 'g',"#A9CCE3","#B03A2E","#9B59B6","#2980B9","#1ABC9C","#27AE60"
@@ -423,41 +426,184 @@ def fillPathToData(path, data,dataRead):
     color = int(len(dataRead))
     for i in range(1,len(path)-1):
         data[path[i].x][path[i].y]  = color
+
+"""
+ Animation
+
+"""
+
+def isNotConflict(min_x, min_y, max_x, max_y , data, width, heigh,idx): # check new location is not conflict with other object
+#    print("vao so sanh")
+#    print(min_x, min_y, max_x, max_y, idx)
+    if min_x < 0 or min_y < 0 or max_x >= heigh or max_y >= width:
+        return False
+#    for i in range(min_x, max_x+1):
+#        print(data[i][max_y], data[i][min_y])
+    for i in range(min_x, max_x+1):
+        for j in range(min_y, max_y+1):
+            if not np.isnan(data[i][j]):
+                if int(data[i][j])!=idx:
+#                print("s1",data[i][max_y],idx)
+                    return False
+#    for i in range(min_x, max_x+1):
+#        if not np.isnan(data[i][max_y]):
+#            if int(data[i][max_y])!=idx:
+##                print("s1",data[i][max_y],idx)
+#                return False
+#        if not np.isnan(data[i][min_y]):
+#            if int(data[i][min_y])!=idx:
+##                print("s2",data[i][min_y],idx)
+#                return False
+#    for i in range(min_y, max_y+1):
+#        if not np.isnan(data[max_x][i]):
+#            if int(data[max_x][i])!=idx:
+##                print("s3",data[max_x][i],idx)
+#                return False
+#        if not np.isnan(data[min_x][i]):
+#            if int(data[min_x][i])!=idx:
+##                print("s4",data[min_x][i],idx)
+#                return False
+    return True
+def updateMat(data, Polygon, action):
+    min_x, min_y, max_x, max_y = Polygon.find_rectangle()
+
+    if(action == 0): # left
+        for i in range(min_x-1,max_x):
+            for j in range(min_y, max_y+1):
+                data[i][j]= data[i+1][j]
+        for j in range(min_y, max_y+1):
+                data[max_x][j]= np.nan
+    elif (action == 1): # right
+        for i in range(max_x+1, min_x,-1):
+            for j in range(min_y, max_y+1):
+                data[i][j]= data[i-1][j]
+        for j in range(min_y, max_y+1):
+                data[min_x][j]= np.nan
+    elif (action == 2): # down
+        for i in range(min_y-1,max_y):
+            for j in range(min_x, max_x+1):
+                data[j][i]= data[j][i+1]
+        for j in range(min_x, max_x+1):
+                data[j][max_y]= np.nan
+    else: # up
+        for i in range(max_y+1, min_y,-1):
+            for j in range(min_x, max_x+1):
+                data[j][i]= data[j][i-1]
+        for j in range(min_x, max_x+1):
+                data[j][min_y]= np.nan
+    return data
+    
+# tuong duong generate data
+def movePolygons(dataRead, data,width, heigh):
+#    print("vao move poly")
+    for i in range(2,len(dataRead)):
+        min_x, min_y, max_x, max_y = dataRead[i].find_rectangle()
+        number=random.randint(0,4) # random direction
+#        print(i,":",min_x, min_y, max_x, max_y)
+        if(isNotConflict(min_x-1,min_y, max_x-1, max_y,data, width, heigh,i)==True and number==0):
+#            print("1")
+            data=updateMat(data,dataRead[i],0)
+            dataRead[i].moveLeft()
+        elif(isNotConflict(min_x,min_y+1, max_x, max_y+1,data, width, heigh,i)==True and number ==1):
+#            print("2")
+            data=updateMat(data,dataRead[i],3)
+            dataRead[i].moveUp()    
+        elif(isNotConflict(min_x+1,min_y, max_x+1, max_y,data, width, heigh,i)==True and number==2):
+#            print("3")
+            data=updateMat(data,dataRead[i],1)
+            dataRead[i].moveRight()
+        elif(isNotConflict(min_x,min_y-1, max_x, max_y-1,data, width, heigh,i)==True and number ==3):
+#            print("5")
+            data = updateMat(data,dataRead[i],2)
+            dataRead[i].moveDown()
+    return data
+
+def ghifile(data,filename):
+    np.savetxt(filename, data, delimiter=',')
 """
     test
 """
-
 if __name__ == "__main__":
     
     '''bfs'''
     dataRead = read_input(wdir)
     width, heigh, data = makeDataSet(dataRead)
-    path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
+    
+    fig, ax = plt.subplots(1, 1, tight_layout=True)
+   # mat = ax.matshow(data)
+
+    my_cmap = colors.ListedColormap(['r', 'b', '#F7DC6F', 'g',"#A9CCE3","#B03A2E","#9B59B6","#2980B9","#1ABC9C","#27AE60"
+                                     ,"#F39C12","#EDBB99","#D0ECE7","#EBDEF0","#A9CCE3","#EBDEF0","#EBEDEF"])
+    my_cmap.set_bad(color='w', alpha=0)
+
+    bounds = [0, 1, 2, 3, 4, 5, 6,7,8,9,10,11,12,13,14,15,16,17,18]
+
+    norm = colors.BoundaryNorm(bounds, my_cmap.N)
+
+    # draw the grid
+    for x in range(heigh + 1):
+        ax.axhline(x, lw=1, color='k')
+
+    for x in range(width + 1):
+        ax.axvline(x, lw=1, color='k')
+
+    ax.set_xticks(np.arange(0, width + 1, 1))
+    ax.set_yticks(np.arange(0, heigh + 1, 1))
+    ax.grid(which='both')
+
+    #movePolygons(dataRead, data,width, heigh)
+    #ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, width, 0, heigh], origin='lower', norm=norm)
+
+
+
+  #  plt.gcf().set_size_inches((10, 10))
+    ' chuyen dong va tim duong dong thoi voi nhau'
+    count = 0
+    plt.ion()
+    while count < 100:
+        movePolygons(dataRead, data,width, heigh)
+        
+        for x in range(heigh + 1):
+            ax.axhline(x, lw=1, color='k')
+        for x in range(width + 1):
+            ax.axvline(x, lw=1, color='k')
+        ax.set_xticks(np.arange(0, width + 1, 1))
+        ax.set_yticks(np.arange(0, heigh + 1, 1))
+        ax.grid(which='both')
+        
+        ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, width, 0, heigh], origin='lower', norm=norm)
+#        plt.show()
+        plt.pause(0.25)
+        count +=1
+        plt.cla()
+        #c= input()
+
+    #plt.close()
+#    path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
     #path ,cost = findPathHeuristic(dataRead[1][0], dataRead[1][1],data)
     
-    fillPathToData(path,data,dataRead)
-    
-    drawDataToGrid(data,width, heigh)
-
-    ''' heuristic'''
-    dataRead2 = read_input(wdir)
-    width, heigh, data2 = makeDataSet(dataRead2)
-    #path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
-    path2 ,cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1],data2)
-    
-    fillPathToData(path2,data2,dataRead2)
-    
-    drawDataToGrid(data2,width, heigh)
-   
-    ''' level 3'''
-    dataRead3 = read_input('input2.txt')
-    width3, heigh3, data3 = makeDataSet(dataRead3)
-
-    path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
-    
-    for points in path3:
-        fillPathToData(points,data3,dataRead3)
-    
-    drawDataToGrid(data3,width3, heigh3)
-   # for i in range(len(path)):
-    #    print(path[i].y, path[i].x, cost[i])
+#    fillPathToData(path,data,dataRead)    
+#    drawDataToGrid(data,width, heigh)
+#
+#    ''' heuristic'''
+#    dataRead2 = read_input(wdir)
+#    width, heigh, data2 = makeDataSet(dataRead2)
+#    #path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
+#    path2 ,cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1],data2)
+#    
+#    fillPathToData(path2,data2,dataRead2)
+#    
+#    drawDataToGrid(data2,width, heigh)
+#   
+#    ''' level 3'''
+#    dataRead3 = read_input('input2.txt')
+#    width3, heigh3, data3 = makeDataSet(dataRead3)
+#
+#    path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
+#    
+#    for points in path3:
+#        fillPathToData(points,data3,dataRead3)
+#    
+#    drawDataToGrid(data3,width3, heigh3)
+#   # for i in range(len(path)):
+#    #    print(path[i].y, path[i].x, cost[i])
