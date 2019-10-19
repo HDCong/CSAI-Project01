@@ -4,7 +4,7 @@ import numpy as np
 from Coordinate import Coordinate
 from Polygon import Polygon
 import queue
-#import math
+import math
 import random 
 
 wdir = 'input.txt'
@@ -245,7 +245,8 @@ def findPathHeuristic(start,goal,data):
         # pop q off list
         openList.pop(qIdx)
         closeList.append(q)
-        # if found goal 
+        
+        # if found goal, create path
         if q == goalSuccessor:
             path=[]
             current = q
@@ -464,34 +465,50 @@ def isNotConflict(min_x, min_y, max_x, max_y , data, width, heigh,idx): # check 
 ##                print("s4",data[min_x][i],idx)
 #                return False
     return True
-def updateMat(data, Polygon, action):
+def updateMat(data, Polygon, action,idx):
     min_x, min_y, max_x, max_y = Polygon.find_rectangle()
 
     if(action == 0): # left
         for i in range(min_x-1,max_x):
             for j in range(min_y, max_y+1):
-                data[i][j]= data[i+1][j]
+                if not math.isnan(data[i+1][j]):
+                    if data[i+1][j]==idx:                    
+                        data[i][j]= data[i+1][j]
+                    else: data[i][j]=math.nan
+                else: data[i][j]=math.nan
         for j in range(min_y, max_y+1):
-                data[max_x][j]= np.nan
+                data[max_x][j]= math.nan
     elif (action == 1): # right
         for i in range(max_x+1, min_x,-1):
             for j in range(min_y, max_y+1):
-                data[i][j]= data[i-1][j]
+                 if not math.isnan(data[i-1][j]):
+                    if data[i-1][j]==idx:   
+                        data[i][j]= data[i-1][j]
+                    else: data[i][j]= math.nan
+                 else: data[i][j]=math.nan
         for j in range(min_y, max_y+1):
-                data[min_x][j]= np.nan
+                data[min_x][j]= math.nan
     elif (action == 2): # down
         for i in range(min_y-1,max_y):
             for j in range(min_x, max_x+1):
-                data[j][i]= data[j][i+1]
+                 if not math.isnan(data[j][i+1]):
+                    if data[j][i+1]==idx:   
+                        data[j][i]= data[j][i+1]
+                    else: data[j][i]= math.nan
+                 else: data[j][i]=math.nan
         for j in range(min_x, max_x+1):
                 data[j][max_y]= np.nan
     else: # up
         for i in range(max_y+1, min_y,-1):
             for j in range(min_x, max_x+1):
-                data[j][i]= data[j][i-1]
+                if not math.isnan(data[j][i-1]):
+                    if data[j][i-1]==idx:   
+                        data[j][i]= data[j][i-1]
+                    else: data[j][i]= math.nan
+                else: data[j][i]=math.nan
         for j in range(min_x, max_x+1):
-                data[j][min_y]= np.nan
-    return data
+                data[j][min_y]= math.nan
+#    return data
     
 # tuong duong generate data
 def movePolygons(dataRead, data,width, heigh):
@@ -502,24 +519,22 @@ def movePolygons(dataRead, data,width, heigh):
 #        print(i,":",min_x, min_y, max_x, max_y)
         if(isNotConflict(min_x-1,min_y, max_x-1, max_y,data, width, heigh,i)==True and number==0):
 #            print("1")
-            data=updateMat(data,dataRead[i],0)
+            updateMat(data,dataRead[i],0,i)
             dataRead[i].moveLeft()
         elif(isNotConflict(min_x,min_y+1, max_x, max_y+1,data, width, heigh,i)==True and number ==1):
 #            print("2")
-            data=updateMat(data,dataRead[i],3)
+            updateMat(data,dataRead[i],3,i)
             dataRead[i].moveUp()    
         elif(isNotConflict(min_x+1,min_y, max_x+1, max_y,data, width, heigh,i)==True and number==2):
 #            print("3")
-            data=updateMat(data,dataRead[i],1)
+            updateMat(data,dataRead[i],1,i)
             dataRead[i].moveRight()
         elif(isNotConflict(min_x,min_y-1, max_x, max_y-1,data, width, heigh,i)==True and number ==3):
 #            print("5")
-            data = updateMat(data,dataRead[i],2)
+            updateMat(data,dataRead[i],2,i)
             dataRead[i].moveDown()
     return data
 
-def ghifile(data,filename):
-    np.savetxt(filename, data, delimiter=',')
 """
     test
 """
@@ -560,7 +575,7 @@ if __name__ == "__main__":
     ' chuyen dong va tim duong dong thoi voi nhau'
     count = 0
     plt.ion()
-    while count < 100:
+    while count < 1000:
         movePolygons(dataRead, data,width, heigh)
         
         for x in range(heigh + 1):
@@ -573,7 +588,7 @@ if __name__ == "__main__":
         
         ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, width, 0, heigh], origin='lower', norm=norm)
 #        plt.show()
-        plt.pause(0.25)
+        plt.pause(0.0001)
         count +=1
         plt.cla()
         #c= input()
