@@ -1,16 +1,13 @@
 from Polygon import Polygon
 from matplotlib import colors
 from Coordinate import Coordinate
-
 import math
-import copy
 import queue
 import random
 import functools
 import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
-
 matplotlib.use("TkAgg")
 wdir = 'input.txt'
 
@@ -64,8 +61,8 @@ def read_input(filepath):
 
 
 def makeDataSet(dataCoord):
-    width = dataRead[0][0].y
-    height = dataRead[0][0].x
+    width = dataCoord[0][0].y
+    height = dataCoord[0][0].x
     data = np.ones((height, width)) * np.nan
 
     for i in range(1, len(dataCoord)):
@@ -267,7 +264,7 @@ def GBFS_Algorithm_with_Animation(polys, start: Coordinate, end: Coordinate, wid
 
 
 """
-    Heuristic
+    A* 
 """
 
 
@@ -301,9 +298,7 @@ def isDiagonal(newStep, parrent):
     return False
 
 
-def findPathHeuristic(start, goal, data):
-    width = dataRead[0][0].y
-    height = dataRead[0][0].x
+def findPathHeuristic(start, goal, data,width, height):
     # initialize open and close list
     openList = []
     closeList = []
@@ -313,8 +308,8 @@ def findPathHeuristic(start, goal, data):
 
     goalSuccessor = Successor(None, goal)
 
-    moveY = [0, 1, 1, 1, 0, -1, -1, -1]
-    moveX = [1, 1, 0, -1, -1, -1, 0, 1]
+    moveY = [0, 0, 1, -1, 1, -1, -1, 1]
+    moveX = [1, -1, 0, 0, -1, -1, 1, 1]
     # Add start scucessor to open list
     openList.append(startSuccessor)
 
@@ -350,7 +345,7 @@ def findPathHeuristic(start, goal, data):
         # check if in the close list
         for successor in successorList:
             for closedSuccessor in closeList:
-                if successor == closedSuccessor:
+                if successor == closedSuccessor and successor.f > closedSuccessor.f:
                     continue
             # value of diagonal is 1.5
             if isDiagonal(successor, q):
@@ -359,12 +354,12 @@ def findPathHeuristic(start, goal, data):
                 successor.g = q.g + 1
 
                 # heuristic is: (x-xG)^2 + ( y-yG)^2
-            successor.h = ((successor.coord.x - goal.x) ** 2) + ((successor.coord.y - goal.y) ** 2)
+            successor.h = (successor.coord.x - goal.x) ** 2 + (successor.coord.y - goal.y) ** 2
             # f= g + h
             successor.f = successor.g + successor.h
             # check if it in the openlist and openlist has f value < its f value
             for openedSuccessor in openList:
-                if successor == openedSuccessor and successor.g > openedSuccessor.g:
+               if successor == openedSuccessor and successor.f > openedSuccessor.f:
                     continue
             openList.append(successor)
 
@@ -373,17 +368,16 @@ def findPathHeuristic(start, goal, data):
     Level 3
 """
 
-
+"""
 ###################################################################
 #      Find route from Start to End visits all given points       #
 ###################################################################
-
+"""
 def getPoints(dataRead):
     points = []
     for i in range(2, len(dataRead[1].points)):
         points.append(dataRead[1][i])
     return points
-
 
 def getSubPath(start, loc, parent):
     path = []
@@ -396,7 +390,6 @@ def getSubPath(start, loc, parent):
     path.reverse()
     return path
 
-
 def isInPath(point, Path):
     for path in Path:
         for p in path:
@@ -404,24 +397,20 @@ def isInPath(point, Path):
                 return True
     return False
 
-
 def clearQueue(queue):
     while not queue.empty():
         queue.get()
-
 
 def removePoint(point, l):
     for p in l:
         if p.x == point.x and p.y == point.y:
             l.remove(p)
 
-
 def isPointInSet(point, s):
     for p in s:
         if point.x == p.x and point.y == p.y:
             return True
     return False
-
 
 def findPath(width, height, start, end, data, points):
     path = []
@@ -434,7 +423,7 @@ def findPath(width, height, start, end, data, points):
 
     # cho phep di cheo 
     y = [0, 1, 1, 1, 0, -1, -1, -1]
-    x = [1, 1, 0, -1, -1, -1, 0, 1]
+    x = [1, 1, 0, -1, -1, -1, 0, 1] 
 
     # khong cho phep di cheo
     # y = [0, 1, 0, -1]
@@ -446,7 +435,7 @@ def findPath(width, height, start, end, data, points):
     q.put(start)
     visited[start.x][start.y] = True
 
-    while not q.empty():
+    while(not q.empty()):
         loc = q.get()
 
         if isPointInSet(loc, points):
@@ -465,15 +454,12 @@ def findPath(width, height, start, end, data, points):
                     newX = loc.x + x[i]
                     newY = loc.y + y[i]
                     point = Coordinate(int(newX), int(newY))
-                    if not isValidPoint(width, height, data, point) \
-                            and visited[newX][newY] \
-                            and not isInPath(point, path):
+                    if isValidPoint(width, height, data, point) and visited[newX][newY] == False and not isInPath(point, path):
                         q.put(point)
                         parent[newX][newY] = loc
                         visited[newX][newY] = True
 
     return path
-
 
 def findPathPassAllPoints(width, height, dataRead, dataset):
     points = getPoints(dataRead)
@@ -485,18 +471,18 @@ def findPathPassAllPoints(width, height, dataRead, dataset):
 
     return path
 
-
 # essential functions
-def drawDataToGrid(data, width, height):
+def drawDataToGrid(data, width, height, title: str):
     global my_cmap, bounds, norm
     fig, ax = plt.subplots(1, 1, tight_layout=False)
-    drawGird(ax, height, width)
+    fig.suptitle(title, fontsize=16)
+    drawGrid(ax, height, width)
     ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, width, 0, height], origin='lower', norm=norm)
     plt.gcf().set_size_inches((10, 10))
     plt.show()
 
 
-def drawGird(ax, height, width):
+def drawGrid(ax, height, width):
     # draw the grid
     for x in range(height + 1):
         ax.axhline(x, lw=1, color='k')
@@ -514,7 +500,7 @@ def fillPathToData(path, data, dataRead):
 
 
 """
- Animation
+  Level 4: Animation
 """
 
 
@@ -609,57 +595,69 @@ def movePolygons(dataRead, data,width, heigh):
     return data
 
 if __name__ == "__main__":
+    
+#      Level 1 & 2
+    ''' BFS'''
+    dataRead1 = read_input(wdir)
+    width1, heigh1, data1 = makeDataSet(dataRead1)
+    path1 = BFS_Algorithm(width1, heigh1, dataRead1[1][0], dataRead1[1][1],data1)
+    fillPathToData(path1,data1,dataRead1)
+    drawDataToGrid(data1,width1, heigh1,'BFS')
+    
+    ''' gbfs'''
+    dataRead5 = read_input(wdir)
+    width5, heigh5, data5 = makeDataSet(dataRead5)
+    start5 = Coordinate(dataRead5[1][0].x, dataRead5[1][0].y)
+    end5 = Coordinate(dataRead5[1][1].x, dataRead5[1][1].y)
+    path5 = GBFS_Algorithm(dataRead5[2:], start5, end5, width5, heigh5, data5)
+    fillPathToData(path5,data5,dataRead5)
+    drawDataToGrid(data5,width5, heigh5,'GBFS')
+    ''' A* '''
+    dataRead2 = read_input(wdir)
+    
+    width2, heigh2, data2 = makeDataSet(dataRead2)
+    
+    path2 ,cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1],data2,width2, heigh2)
+    
+    fillPathToData(path2,data2,dataRead2)
+    drawDataToGrid(data2,width2, heigh2,'A*')
 
-    dataRead = read_input(wdir)
-    width, height, data = makeDataSet(dataRead)
+    # Level 3
+    
+    ''' multi point'''
+    dataRead3 = read_input('input2.txt')
+    width3, heigh3, data3 = makeDataSet(dataRead3)
 
-    fig, ax = plt.subplots(1, 1, tight_layout=True)
+    path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
 
-    start = Coordinate(dataRead[1][0].x, dataRead[1][0].y)
-    end = Coordinate(dataRead[1][1].x, dataRead[1][1].y)
+    for points in path3:
+        fillPathToData(points,data3,dataRead3)
 
-    drawGird(ax, height, width)
+    drawDataToGrid(data3,width3, heigh3,'Multi points')
+    ''' animation '''
+    
+    dataRead4 = read_input(wdir)
+    width4, height4, data4 = makeDataSet(dataRead4)
+
+    fig4, ax4 = plt.subplots(1, 1, tight_layout=True)
+    fig4.suptitle('Animation', fontsize=10)
+    
+    start4 = Coordinate(dataRead4[1][0].x, dataRead4[1][0].y)
+    end4 = Coordinate(dataRead4[1][1].x, dataRead4[1][1].y)
+
+    drawGrid(ax4, height4, width4)
 
     plt.ion()
-    next_node = start
-    while not next_node == end:
-        movePolygons(dataRead, data, width, height)
+    next_node4 = start4
+    while not next_node4 == end4:
+        movePolygons(dataRead4, data4, width4, height4)
 
-        data[next_node.x][next_node.y] = np.nan
-        next_node = GBFS_Algorithm_with_Animation(dataRead[2:], next_node, end, width, height, data)
-        data[next_node.x][next_node.y] = 1
+        data4[next_node4.x][next_node4.y] = np.nan
+        next_node4 = GBFS_Algorithm_with_Animation(dataRead4[2:], next_node4, end4, width4, height4, data4)
+        data4[next_node4.x][next_node4.y] = 1
 
-        drawGird(ax, height, width)
+        drawGrid(ax4, height4, width4)
 
-        ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, width, 0, height], origin='lower', norm=norm)
-        plt.pause(0.5)
+        ax4.imshow(data4, interpolation='none', cmap=my_cmap, extent=[0, width4, 0, height4], origin='lower', norm=norm)
+        plt.pause(0.1)
         plt.cla()
-
-#   path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
-#   path ,cost = findPathHeuristic(dataRead[1][0], dataRead[1][1],data)
-
-#    fillPathToData(path,data,dataRead)
-#    drawDataToGrid(data,width, heigh)
-#
-#    ''' heuristic'''
-#    dataRead2 = read_input(wdir)
-#    width, heigh, data2 = makeDataSet(dataRead2)
-#    #path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
-#    path2 ,cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1],data2)
-#
-#    fillPathToData(path2,data2,dataRead2)
-#
-#    drawDataToGrid(data2,width, heigh)
-#
-#    ''' level 3'''
-#    dataRead3 = read_input('input2.txt')
-#    width3, heigh3, data3 = makeDataSet(dataRead3)
-#
-#    path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
-#
-#    for points in path3:
-#        fillPathToData(points,data3,dataRead3)
-#
-#    drawDataToGrid(data3,width3, heigh3)
-#    #for i in range(len(path)):
-#    #    print(path[i].y, path[i].x, cost[i])
