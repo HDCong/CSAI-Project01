@@ -1,6 +1,7 @@
 from Polygon import Polygon
 from matplotlib import colors
 from Coordinate import Coordinate
+from Graphic import *
 
 import math
 import copy
@@ -82,73 +83,6 @@ def makeDataSet(dataCoord):
                 plotLine(data, dataCoord[i][j], dataCoord[i][j + 1], i)
             plotLine(data, dataCoord[i][size - 1], dataCoord[i][0], i)
     return width, height, data
-
-
-"""
-    Draw a line: 
-    Source: 
-    https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm?fbclid=IwAR0TiBG42hKE7Xi3IfoWshVTgltjWdE8utajs4fWc_sGcrZWrj7nO09uQtY
-"""
-
-
-def plotLine(data, fromCoord, toCoord, index):
-    x0, y0 = fromCoord.x, fromCoord.y
-    x1, y1 = toCoord.x, toCoord.y
-
-    if abs(y1 - y0) < abs(x1 - x0):
-        if x0 > x1:
-            plotLineLow(data, toCoord, fromCoord, index)
-        else:
-            plotLineLow(data, fromCoord, toCoord, index)
-    else:
-        if y0 > y1:
-            plotLineHigh(data, toCoord, fromCoord, index)
-        else:
-            plotLineHigh(data, fromCoord, toCoord, index)
-
-
-def plotLineLow(data, fromCoord, toCoord, index):
-    x0, y0 = fromCoord.x, fromCoord.y
-    x1, y1 = toCoord.x, toCoord.y
-    dx = x1 - x0
-    dy = y1 - y0
-    yi = 1
-    if dy < 0:
-        yi = -1
-        dy = -dy
-    D = 2 * dy - dx
-    y = y0
-
-    for x in range(x0, x1):
-        data[x][y] = index
-        if D > 0:
-            y = y + yi
-            D = D - 2 * dx
-        D = D + 2 * dy
-
-
-def plotLineHigh(data, fromCoord, toCoord, index):
-    x0, y0 = fromCoord.x, fromCoord.y
-    x1, y1 = toCoord.x, toCoord.y
-    dx = x1 - x0
-    dy = y1 - y0
-    xi = 1
-    if dx < 0:
-        xi = -1
-        dx = -dx
-    D = 2 * dx - dy
-    x = x0
-
-    for y in range(y0, y1):
-        data[x][y] = index
-        if D > 0:
-            x = x + xi
-            D = D - 2 * dx
-        D = D + 2 * dx
-
-
-#######################################################################
-
 
 """
     Algorithms
@@ -532,28 +466,24 @@ def isNotConflict(min_x, min_y, max_x, max_y, data, width, height, idx):
 def updateMat(data, Polygon, action):
     min_x, min_y, max_x, max_y = Polygon.find_rectangle()
     if action == 0:  # left
-        print("left")
         for i in range(min_x - 1, max_x):
             for j in range(min_y, max_y + 1):
                 data[i][j] = data[i + 1][j]
         for j in range(min_y, max_y + 1):
             data[max_x][j] = np.nan
     elif action == 1:  # right
-        print("right")
         for i in range(max_x + 1, min_x, -1):
             for j in range(min_y, max_y + 1):
                 data[i][j] = data[i - 1][j]
         for j in range(min_y, max_y + 1):
             data[min_x][j] = np.nan
     elif action == 2:  # down
-        print("down")
         for i in range(min_y - 1, max_y):
             for j in range(min_x, max_x + 1):
                 data[j][i] = data[j][i + 1]
         for j in range(min_x, max_x + 1):
             data[j][max_y] = np.nan
     else:  # up
-        print("up")
         for i in range(max_y + 1, min_y, -1):
             for j in range(min_x, max_x + 1):
                 data[j][i] = data[j][i - 1]
@@ -568,16 +498,16 @@ def movePolygons(dataRead, data, width, height):
         min_x, min_y, max_x, max_y = dataRead[i].find_rectangle()
         number = random.randint(0, 4)  # random direction
         if isNotConflict(min_x - 1, min_y, max_x - 1, max_y, data, width, height, i) and number == 0:
-            data = updateMat(data, dataRead[i], 0)
+            updateMat(data, dataRead[i], 0)
             dataRead[i].moveLeft()
         elif isNotConflict(min_x, min_y + 1, max_x, max_y + 1, data, width, height, i) and number == 1:
-            data = updateMat(data, dataRead[i], 3)
+            updateMat(data, dataRead[i], 3)
             dataRead[i].moveUp()
         elif isNotConflict(min_x + 1, min_y, max_x + 1, max_y, data, width, height, i) and number == 2:
-            data = updateMat(data, dataRead[i], 1)
+            updateMat(data, dataRead[i], 1)
             dataRead[i].moveRight()
         elif isNotConflict(min_x, min_y - 1, max_x, max_y - 1, data, width, height, i) and number == 3:
-            data = updateMat(data, dataRead[i], 2)
+            updateMat(data, dataRead[i], 2)
             dataRead[i].moveDown()
     return data
 
