@@ -251,7 +251,7 @@ def GBFS_Algorithm(polys, start: Coordinate, end: Coordinate, width: int, height
                 u.h = u.Heuristic(end)
                 u.parentNode = v
                 open_set.append(u)
-    return None
+    return []
 
 
 def GBFS_Algorithm_with_Animation(polys, start: Coordinate, end: Coordinate, width: int, height: int, data):
@@ -302,14 +302,14 @@ def findPathHeuristic(start, goal, data,width, height):
     # initialize open and close list
     openList = []
     closeList = []
-
+    
     # Create base successor
     startSuccessor = Successor(None, start)
 
     goalSuccessor = Successor(None, goal)
 
-    moveY = [0, 0, 1, -1, 1, -1, -1, 1]
-    moveX = [1, -1, 0, 0, -1, -1, 1, 1]
+    moveX = [0, 1, 1, 1, 0, -1, -1, -1]
+    moveY = [1, 1, 0, -1, -1, -1, 0, 1] 
     # Add start scucessor to open list
     openList.append(startSuccessor)
 
@@ -345,23 +345,25 @@ def findPathHeuristic(start, goal, data,width, height):
         # check if in the close list
         for successor in successorList:
             for closedSuccessor in closeList:
-                if successor == closedSuccessor and successor.f > closedSuccessor.f:
+                if successor == closedSuccessor and successor.g > closedSuccessor.g:
+                    continue
+            # check if it in the openlist and openlist has g value < its g value
+            for openedSuccessor in openList:
+               if successor == openedSuccessor and successor.g > openedSuccessor.g:
                     continue
             # value of diagonal is 1.5
             if isDiagonal(successor, q):
                 successor.g = q.g + 1.5
             else:
                 successor.g = q.g + 1
-
-                # heuristic is: (x-xG)^2 + ( y-yG)^2
+            # heuristic is: (x-xG)^2 + ( y-yG)^2
             successor.h = (successor.coord.x - goal.x) ** 2 + (successor.coord.y - goal.y) ** 2
             # f= g + h
             successor.f = successor.g + successor.h
-            # check if it in the openlist and openlist has f value < its f value
-            for openedSuccessor in openList:
-               if successor == openedSuccessor and successor.f > openedSuccessor.f:
-                    continue
             openList.append(successor)
+        if (len(openList)> width * height * 8):
+              # can not find
+              return [], []
 
 
 """ 
@@ -603,6 +605,7 @@ if __name__ == "__main__":
     path1 = BFS_Algorithm(width1, heigh1, dataRead1[1][0], dataRead1[1][1],data1)
     fillPathToData(path1,data1,dataRead1)
     drawDataToGrid(data1,width1, heigh1,'BFS')
+
     
     ''' gbfs'''
     dataRead5 = read_input(wdir)
@@ -610,7 +613,9 @@ if __name__ == "__main__":
     start5 = Coordinate(dataRead5[1][0].x, dataRead5[1][0].y)
     end5 = Coordinate(dataRead5[1][1].x, dataRead5[1][1].y)
     path5 = GBFS_Algorithm(dataRead5[2:], start5, end5, width5, heigh5, data5)
+    print(path5)
     fillPathToData(path5,data5,dataRead5)
+    
     drawDataToGrid(data5,width5, heigh5,'GBFS')
     ''' A* '''
     dataRead2 = read_input(wdir)
@@ -625,7 +630,7 @@ if __name__ == "__main__":
     # Level 3
     
     ''' multi point'''
-    dataRead3 = read_input('input2.txt')
+    dataRead3 = read_input(wdir)
     width3, heigh3, data3 = makeDataSet(dataRead3)
 
     path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
