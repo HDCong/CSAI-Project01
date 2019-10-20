@@ -1,12 +1,10 @@
+from Graphic import *
+from Animation import *
 from Polygon import Polygon
 from matplotlib import colors
 from Coordinate import Coordinate
-from Graphic import *
 
-import math
-import copy
 import queue
-import random
 import functools
 import matplotlib
 import numpy as np
@@ -19,16 +17,15 @@ wdir = 'input.txt'
 
 # Define Colors to paint
 my_cmap = colors.ListedColormap(
-        ["r", "b", '#F7DC6F', "g", "#A9CCE3",
-         "#B03A2E", "#9B59B6", "#2980B9", "#1ABC9C", "#27AE60",
-         "#F39C12", "#EDBB99", "#D0ECE7", "#EBDEF0", "#A9CCE3", "#EBDEF0", "#EBEDEF"
-         ])
+    ["r", "b", '#F7DC6F', "g", "#A9CCE3",
+     "#B03A2E", "#9B59B6", "#2980B9", "#1ABC9C", "#27AE60",
+     "#F39C12", "#EDBB99", "#D0ECE7", "#EBDEF0", "#A9CCE3", "#EBDEF0", "#EBEDEF"
+     ])
 bounds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 norm = colors.BoundaryNorm(bounds, my_cmap.N)
 
 # Configure
 my_cmap.set_bad(color='w', alpha=0)
-
 
 """    
     result[0][0]: size, result[0][0].y  = width, result[0][0].x = heigh
@@ -65,8 +62,8 @@ def read_input(filepath):
 
 
 def makeDataSet(dataCoord):
-    width = dataRead[0][0].y
-    height = dataRead[0][0].x
+    width = dataCoord[0][0].y
+    height = dataCoord[0][0].x
     data = np.ones((height, width)) * np.nan
 
     for i in range(1, len(dataCoord)):
@@ -83,6 +80,7 @@ def makeDataSet(dataCoord):
                 plotLine(data, dataCoord[i][j], dataCoord[i][j + 1], i)
             plotLine(data, dataCoord[i][size - 1], dataCoord[i][0], i)
     return width, height, data
+
 
 """
     Algorithms
@@ -201,7 +199,7 @@ def GBFS_Algorithm_with_Animation(polys, start: Coordinate, end: Coordinate, wid
 
 
 """
-    Heuristic
+    A* 
 """
 
 
@@ -235,9 +233,7 @@ def isDiagonal(newStep, parrent):
     return False
 
 
-def findPathHeuristic(start, goal, data):
-    width = dataRead[0][0].y
-    height = dataRead[0][0].x
+def findPathHeuristic(start, goal, data, width, height):
     # initialize open and close list
     openList = []
     closeList = []
@@ -247,8 +243,8 @@ def findPathHeuristic(start, goal, data):
 
     goalSuccessor = Successor(None, goal)
 
-    moveY = [0, 1, 1, 1, 0, -1, -1, -1]
-    moveX = [1, 1, 0, -1, -1, -1, 0, 1]
+    moveY = [0, 0, 1, -1, 1, -1, -1, 1]
+    moveX = [1, -1, 0, 0, -1, -1, 1, 1]
     # Add start scucessor to open list
     openList.append(startSuccessor)
 
@@ -284,7 +280,7 @@ def findPathHeuristic(start, goal, data):
         # check if in the close list
         for successor in successorList:
             for closedSuccessor in closeList:
-                if successor == closedSuccessor:
+                if successor == closedSuccessor and successor.f > closedSuccessor.f:
                     continue
             # value of diagonal is 1.5
             if isDiagonal(successor, q):
@@ -293,12 +289,12 @@ def findPathHeuristic(start, goal, data):
                 successor.g = q.g + 1
 
                 # heuristic is: (x-xG)^2 + ( y-yG)^2
-            successor.h = ((successor.coord.x - goal.x) ** 2) + ((successor.coord.y - goal.y) ** 2)
+            successor.h = (successor.coord.x - goal.x) ** 2 + (successor.coord.y - goal.y) ** 2
             # f= g + h
             successor.f = successor.g + successor.h
             # check if it in the openlist and openlist has f value < its f value
             for openedSuccessor in openList:
-                if successor == openedSuccessor and successor.g > openedSuccessor.g:
+                if successor == openedSuccessor and successor.f > openedSuccessor.f:
                     continue
             openList.append(successor)
 
@@ -421,16 +417,17 @@ def findPathPassAllPoints(width, height, dataRead, dataset):
 
 
 # essential functions
-def drawDataToGrid(data, width, height):
+def drawDataToGrid(data, width, height, title: str):
     global my_cmap, bounds, norm
     fig, ax = plt.subplots(1, 1, tight_layout=False)
-    drawGird(ax, height, width)
+    fig.suptitle(title, fontsize=16)
+    drawGrid(ax, height, width)
     ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, width, 0, height], origin='lower', norm=norm)
     plt.gcf().set_size_inches((10, 10))
     plt.show()
 
 
-def drawGird(ax, height, width):
+def drawGrid(ax, height, width):
     # draw the grid
     for x in range(height + 1):
         ax.axhline(x, lw=1, color='k')
@@ -447,127 +444,72 @@ def fillPathToData(path, data, dataRead):
         data[path[i].x][path[i].y] = color
 
 
-"""
- Animation
-"""
-
-
-def isNotConflict(min_x, min_y, max_x, max_y, data, width, height, idx):
-    if min_x < 0 or min_y < 0 or max_x >= height or max_y >= width:
-        return False
-    for i in range(min_x, max_x + 1):
-        for j in range(min_y, max_y + 1):
-            if not np.isnan(data[i][j]):
-                if int(data[i][j]) != idx:
-                    return False
-    return True
-
-
-def updateMat(data, Polygon, action):
-    min_x, min_y, max_x, max_y = Polygon.find_rectangle()
-    if action == 0:  # left
-        for i in range(min_x - 1, max_x):
-            for j in range(min_y, max_y + 1):
-                data[i][j] = data[i + 1][j]
-        for j in range(min_y, max_y + 1):
-            data[max_x][j] = np.nan
-    elif action == 1:  # right
-        for i in range(max_x + 1, min_x, -1):
-            for j in range(min_y, max_y + 1):
-                data[i][j] = data[i - 1][j]
-        for j in range(min_y, max_y + 1):
-            data[min_x][j] = np.nan
-    elif action == 2:  # down
-        for i in range(min_y - 1, max_y):
-            for j in range(min_x, max_x + 1):
-                data[j][i] = data[j][i + 1]
-        for j in range(min_x, max_x + 1):
-            data[j][max_y] = np.nan
-    else:  # up
-        for i in range(max_y + 1, min_y, -1):
-            for j in range(min_x, max_x + 1):
-                data[j][i] = data[j][i - 1]
-        for j in range(min_x, max_x + 1):
-            data[j][min_y] = np.nan
-    return data
-
-
-# tuong duong generate data
-def movePolygons(dataRead, data, width, height):
-    for i in range(2, len(dataRead)):
-        min_x, min_y, max_x, max_y = dataRead[i].find_rectangle()
-        number = random.randint(0, 4)  # random direction
-        if isNotConflict(min_x - 1, min_y, max_x - 1, max_y, data, width, height, i) and number == 0:
-            updateMat(data, dataRead[i], 0)
-            dataRead[i].moveLeft()
-        elif isNotConflict(min_x, min_y + 1, max_x, max_y + 1, data, width, height, i) and number == 1:
-            updateMat(data, dataRead[i], 3)
-            dataRead[i].moveUp()
-        elif isNotConflict(min_x + 1, min_y, max_x + 1, max_y, data, width, height, i) and number == 2:
-            updateMat(data, dataRead[i], 1)
-            dataRead[i].moveRight()
-        elif isNotConflict(min_x, min_y - 1, max_x, max_y - 1, data, width, height, i) and number == 3:
-            updateMat(data, dataRead[i], 2)
-            dataRead[i].moveDown()
-    return data
-
-
-def ghifile(data, filename):
-    np.savetxt(filename, data, delimiter=',')
-
-
 if __name__ == "__main__":
 
-    dataRead = read_input(wdir)
-    width, height, data = makeDataSet(dataRead)
+    #      Level 1 & 2
+    ''' BFS'''
+    dataRead1 = read_input(wdir)
+    width1, heigh1, data1 = makeDataSet(dataRead1)
+    path1 = BFS_Algorithm(width1, heigh1, dataRead1[1][0], dataRead1[1][1], data1)
+    fillPathToData(path1, data1, dataRead1)
+    drawDataToGrid(data1, width1, heigh1, 'BFS')
 
-    fig, ax = plt.subplots(1, 1, tight_layout=True)
+    ''' gbfs'''
+    dataRead5 = read_input(wdir)
+    width5, heigh5, data5 = makeDataSet(dataRead5)
+    start5 = Coordinate(dataRead5[1][0].x, dataRead5[1][0].y)
+    end5 = Coordinate(dataRead5[1][1].x, dataRead5[1][1].y)
+    path5 = GBFS_Algorithm(dataRead5[2:], start5, end5, width5, heigh5, data5)
+    fillPathToData(path5, data5, dataRead5)
+    drawDataToGrid(data5, width5, heigh5, 'GBFS')
 
-    start = Coordinate(dataRead[1][0].x, dataRead[1][0].y)
-    end = Coordinate(dataRead[1][1].x, dataRead[1][1].y)
+    ''' A* '''
+    dataRead2 = read_input(wdir)
 
-    drawGird(ax, height, width)
+    width2, heigh2, data2 = makeDataSet(dataRead2)
+
+    path2, cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1], data2, width2, heigh2)
+
+    fillPathToData(path2, data2, dataRead2)
+    drawDataToGrid(data2, width2, heigh2, 'A*')
+
+    # Level 3
+
+    ''' multi point'''
+    dataRead3 = read_input('input2.txt')
+    width3, heigh3, data3 = makeDataSet(dataRead3)
+
+    path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
+
+    for points in path3:
+        fillPathToData(points, data3, dataRead3)
+
+    drawDataToGrid(data3, width3, heigh3, 'Multi points')
+
+    ''' animation '''
+
+    dataRead4 = read_input(wdir)
+    width4, height4, data4 = makeDataSet(dataRead4)
+
+    fig4, ax4 = plt.subplots(1, 1, tight_layout=True)
+    fig4.suptitle('Animation', fontsize=10)
+
+    start4 = Coordinate(dataRead4[1][0].x, dataRead4[1][0].y)
+    end4 = Coordinate(dataRead4[1][1].x, dataRead4[1][1].y)
+
+    drawGrid(ax4, height4, width4)
 
     plt.ion()
-    next_node = start
-    while not next_node == end:
-        movePolygons(dataRead, data, width, height)
+    next_node4 = start4
+    while not next_node4 == end4:
+        movePolygons(dataRead4, data4, width4, height4)
 
-        data[next_node.x][next_node.y] = np.nan
-        next_node = GBFS_Algorithm_with_Animation(dataRead[2:], next_node, end, width, height, data)
-        data[next_node.x][next_node.y] = 1
+        data4[next_node4.x][next_node4.y] = np.nan
+        next_node4 = GBFS_Algorithm_with_Animation(dataRead4[2:], next_node4, end4, width4, height4, data4)
+        data4[next_node4.x][next_node4.y] = 1
 
-        drawGird(ax, height, width)
+        drawGrid(ax4, height4, width4)
 
-        ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, width, 0, height], origin='lower', norm=norm)
-        plt.pause(1)
+        ax4.imshow(data4, interpolation='none', cmap=my_cmap, extent=[0, width4, 0, height4], origin='lower', norm=norm)
+        plt.pause(0.1)
         plt.cla()
-
-#   path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
-#   path ,cost = findPathHeuristic(dataRead[1][0], dataRead[1][1],data)
-
-#    fillPathToData(path,data,dataRead)
-#    drawDataToGrid(data,width, heigh)
-#
-#    ''' heuristic'''
-#    dataRead2 = read_input(wdir)
-#    width, heigh, data2 = makeDataSet(dataRead2)
-#    #path = BFS_Algorithm(width, heigh, dataRead[1][0], dataRead[1][1],data)
-#    path2 ,cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1],data2)
-#
-#    fillPathToData(path2,data2,dataRead2)
-#
-#    drawDataToGrid(data2,width, heigh)
-#
-#    ''' level 3'''
-#    dataRead3 = read_input('input2.txt')
-#    width3, heigh3, data3 = makeDataSet(dataRead3)
-#
-#    path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
-#
-#    for points in path3:
-#        fillPathToData(points,data3,dataRead3)
-#
-#    drawDataToGrid(data3,width3, heigh3)
-#    #for i in range(len(path)):
-#    #    print(path[i].y, path[i].x, cost[i])
