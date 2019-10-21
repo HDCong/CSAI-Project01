@@ -1,4 +1,3 @@
-from Graphic import *
 from Animation import *
 from Polygon import Polygon
 from matplotlib import colors
@@ -11,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 matplotlib.use("TkAgg")
-wdir = 'input.txt'
+wdir = './Input/input2.txt'
 
 # Global variable
 
@@ -80,6 +79,72 @@ def makeDataSet(dataCoord):
                 plotLine(data, dataCoord[i][j], dataCoord[i][j + 1], i)
             plotLine(data, dataCoord[i][size - 1], dataCoord[i][0], i)
     return width, height, data
+
+
+"""
+    Draw a line: 
+    Source: 
+    https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm?fbclid=IwAR0TiBG42hKE7Xi3IfoWshVTgltjWdE8utajs4fWc_sGcrZWrj7nO09uQtY
+"""
+
+
+def plotLine(data, fromCoord, toCoord, index):
+    x0, y0 = fromCoord.x, fromCoord.y
+    x1, y1 = toCoord.x, toCoord.y
+
+    if abs(y1 - y0) < abs(x1 - x0):
+        if x0 > x1:
+            plotLineLow(data, toCoord, fromCoord, index)
+        else:
+            plotLineLow(data, fromCoord, toCoord, index)
+    else:
+        if y0 > y1:
+            plotLineHigh(data, toCoord, fromCoord, index)
+        else:
+            plotLineHigh(data, fromCoord, toCoord, index)
+
+
+def plotLineLow(data, fromCoord, toCoord, index):
+    x0, y0 = fromCoord.x, fromCoord.y
+    x1, y1 = toCoord.x, toCoord.y
+    dx = x1 - x0
+    dy = y1 - y0
+    yi = 1
+    if dy < 0:
+        yi = -1
+        dy = -dy
+    D = 2 * dy - dx
+    y = y0
+
+    for x in range(x0, x1):
+        data[x][y] = index
+        if D > 0:
+            y = y + yi
+            D = D - 2 * dx
+        D = D + 2 * dy
+
+
+def plotLineHigh(data, fromCoord, toCoord, index):
+    x0, y0 = fromCoord.x, fromCoord.y
+    x1, y1 = toCoord.x, toCoord.y
+    dx = x1 - x0
+    dy = y1 - y0
+    xi = 1
+    if dx < 0:
+        xi = -1
+        dx = -dx
+    D = 2 * dx - dy
+    x = x0
+
+    for y in range(y0, y1):
+        data[x][y] = index
+        if D > 0:
+            x = x + xi
+            D = D - 2 * dx
+        D = D + 2 * dx
+
+
+#######################################################################
 
 
 """
@@ -186,7 +251,7 @@ def GBFS_Algorithm(polys, start: Coordinate, end: Coordinate, width: int, height
                 u.h = u.Heuristic(end)
                 u.parentNode = v
                 open_set.append(u)
-    return None
+    return []
 
 
 def GBFS_Algorithm_with_Animation(polys, start: Coordinate, end: Coordinate, width: int, height: int, data):
@@ -243,8 +308,8 @@ def findPathHeuristic(start, goal, data, width, height):
 
     goalSuccessor = Successor(None, goal)
 
-    moveY = [0, 0, 1, -1, 1, -1, -1, 1]
-    moveX = [1, -1, 0, 0, -1, -1, 1, 1]
+    moveX = [0, 1, 1, 1, 0, -1, -1, -1]
+    moveY = [1, 1, 0, -1, -1, -1, 0, 1]
     # Add start scucessor to open list
     openList.append(startSuccessor)
 
@@ -280,23 +345,25 @@ def findPathHeuristic(start, goal, data, width, height):
         # check if in the close list
         for successor in successorList:
             for closedSuccessor in closeList:
-                if successor == closedSuccessor and successor.f > closedSuccessor.f:
+                if successor == closedSuccessor and successor.g > closedSuccessor.g:
+                    continue
+            # check if it in the openlist and openlist has g value < its g value
+            for openedSuccessor in openList:
+                if successor == openedSuccessor and successor.g > openedSuccessor.g:
                     continue
             # value of diagonal is 1.5
             if isDiagonal(successor, q):
                 successor.g = q.g + 1.5
             else:
                 successor.g = q.g + 1
-
-                # heuristic is: (x-xG)^2 + ( y-yG)^2
+            # heuristic is: (x-xG)^2 + ( y-yG)^2
             successor.h = (successor.coord.x - goal.x) ** 2 + (successor.coord.y - goal.y) ** 2
             # f= g + h
             successor.f = successor.g + successor.h
-            # check if it in the openlist and openlist has f value < its f value
-            for openedSuccessor in openList:
-                if successor == openedSuccessor and successor.f > openedSuccessor.f:
-                    continue
             openList.append(successor)
+        if len(openList) > width * height * 8:
+            # can not find
+            return [], []
 
 
 """ 
@@ -308,10 +375,12 @@ def findPathHeuristic(start, goal, data, width, height):
 #      Find route from Start to End visits all given points       #
 ###################################################################
 
+
 def getPoints(dataRead):
     points = []
     for i in range(2, len(dataRead[1].points)):
         points.append(dataRead[1][i])
+
     return points
 
 
@@ -401,7 +470,7 @@ def findPath(width, height, start, end, data, points):
                         q.put(point)
                         parent[newX][newY] = loc
                         visited[newX][newY] = True
-
+    print(path)
     return path
 
 
@@ -446,70 +515,71 @@ def fillPathToData(path, data, dataRead):
 
 if __name__ == "__main__":
 
-    #      Level 1 & 2
-    ''' BFS'''
-    dataRead1 = read_input(wdir)
-    width1, heigh1, data1 = makeDataSet(dataRead1)
-    path1 = BFS_Algorithm(width1, heigh1, dataRead1[1][0], dataRead1[1][1], data1)
-    fillPathToData(path1, data1, dataRead1)
-    drawDataToGrid(data1, width1, heigh1, 'BFS')
+    # #      Level 1 & 2
+    # ''' BFS'''
+    # dataRead1 = read_input(wdir)
+    # width1, heigh1, data1 = makeDataSet(dataRead1)
+    # path1 = BFS_Algorithm(width1, heigh1, dataRead1[1][0], dataRead1[1][1], data1)
+    # fillPathToData(path1, data1, dataRead1)
+    # drawDataToGrid(data1, width1, heigh1, 'BFS')
 
-    ''' gbfs'''
-    dataRead5 = read_input(wdir)
-    width5, heigh5, data5 = makeDataSet(dataRead5)
-    start5 = Coordinate(dataRead5[1][0].x, dataRead5[1][0].y)
-    end5 = Coordinate(dataRead5[1][1].x, dataRead5[1][1].y)
-    path5 = GBFS_Algorithm(dataRead5[2:], start5, end5, width5, heigh5, data5)
-    fillPathToData(path5, data5, dataRead5)
-    drawDataToGrid(data5, width5, heigh5, 'GBFS')
+    # ''' gbfs'''
+    # dataRead5 = read_input(wdir)
+    # width5, heigh5, data5 = makeDataSet(dataRead5)
+    # start5 = Coordinate(dataRead5[1][0].x, dataRead5[1][0].y)
+    # end5 = Coordinate(dataRead5[1][1].x, dataRead5[1][1].y)
+    # path5 = GBFS_Algorithm(dataRead5[2:], start5, end5, width5, heigh5, data5)
+    # fillPathToData(path5, data5, dataRead5)
+    # drawDataToGrid(data5, width5, heigh5, 'GBFS')
 
     ''' A* '''
-    dataRead2 = read_input(wdir)
-
-    width2, heigh2, data2 = makeDataSet(dataRead2)
-
-    path2, cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1], data2, width2, heigh2)
-
-    fillPathToData(path2, data2, dataRead2)
-    drawDataToGrid(data2, width2, heigh2, 'A*')
+    # dataRead2 = read_input(wdir)
+    #
+    # width2, heigh2, data2 = makeDataSet(dataRead2)
+    #
+    # path2, cost2 = findPathHeuristic(dataRead2[1][0], dataRead2[1][1], data2, width2, heigh2)
+    #
+    # fillPathToData(path2, data2, dataRead2)
+    # drawDataToGrid(data2, width2, heigh2, 'A*')
 
     # Level 3
 
     ''' multi point'''
-    dataRead3 = read_input('input2.txt')
+    dataRead3 = read_input('./Input/input4.txt')
     width3, heigh3, data3 = makeDataSet(dataRead3)
 
     path3 = findPathPassAllPoints(width3, heigh3, dataRead3, data3)
 
     for points in path3:
+        print("Hello")
         fillPathToData(points, data3, dataRead3)
 
     drawDataToGrid(data3, width3, heigh3, 'Multi points')
 
     ''' animation '''
 
-    dataRead4 = read_input(wdir)
-    width4, height4, data4 = makeDataSet(dataRead4)
-
-    fig4, ax4 = plt.subplots(1, 1, tight_layout=True)
-    fig4.suptitle('Animation', fontsize=10)
-
-    start4 = Coordinate(dataRead4[1][0].x, dataRead4[1][0].y)
-    end4 = Coordinate(dataRead4[1][1].x, dataRead4[1][1].y)
-
-    drawGrid(ax4, height4, width4)
-
-    plt.ion()
-    next_node4 = start4
-    while not next_node4 == end4:
-        movePolygons(dataRead4, data4, width4, height4)
-
-        data4[next_node4.x][next_node4.y] = np.nan
-        next_node4 = GBFS_Algorithm_with_Animation(dataRead4[2:], next_node4, end4, width4, height4, data4)
-        data4[next_node4.x][next_node4.y] = 1
-
-        drawGrid(ax4, height4, width4)
-
-        ax4.imshow(data4, interpolation='none', cmap=my_cmap, extent=[0, width4, 0, height4], origin='lower', norm=norm)
-        plt.pause(0.1)
-        plt.cla()
+    # dataRead4 = read_input(wdir)
+    # width4, height4, data4 = makeDataSet(dataRead4)
+    #
+    # fig4, ax4 = plt.subplots(1, 1, tight_layout=True)
+    # fig4.suptitle('Animation', fontsize=10)
+    #
+    # start4 = Coordinate(dataRead4[1][0].x, dataRead4[1][0].y)
+    # end4 = Coordinate(dataRead4[1][1].x, dataRead4[1][1].y)
+    #
+    # drawGrid(ax4, height4, width4)
+    #
+    # plt.ion()
+    # next_node4 = start4
+    # while not next_node4 == end4:
+    #     movePolygons(dataRead4, data4, width4, height4)
+    #
+    #     data4[next_node4.x][next_node4.y] = np.nan
+    #     next_node4 = GBFS_Algorithm_with_Animation(dataRead4[2:], next_node4, end4, width4, height4, data4)
+    #     data4[next_node4.x][next_node4.y] = 1
+    #
+    #     drawGrid(ax4, height4, width4)
+    #
+    #     ax4.imshow(data4, interpolation='none', cmap=my_cmap, extent=[0, width4, 0, height4], origin='lower', norm=norm)
+    #     plt.pause(0.1)
+    #     plt.cla()
