@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 matplotlib.use("TkAgg")
-wdir = './Input/input2.txt'
+wdir = "./Input/input4.txt" # input("Nhập vào đường dẫn file đầu vào: ")
 
 
 """    
@@ -189,32 +189,32 @@ def findPathPassAllPoints(width, height, dataRead, dataset):
 
 if __name__ == "__main__":
 
-    # #      Level 1 & 2
-    # ''' BFS'''
-    dataRead1 = read_input(wdir)
-    width1, heigh1, data1 = makeDataSet(dataRead1)
-    path1 = BFS_Algorithm.BFS_Algorithm(width1, heigh1, dataRead1[1][0], dataRead1[1][1], data1)
-    fillPathToData(path1, data1, dataRead1)
-    drawDataToGrid(data1, width1, heigh1, 'BFS')
+    # Level 1 & 2
+    ''' BFS'''
+    # dataRead1 = read_input(wdir)
+    # width1, heigh1, data1 = makeDataSet(dataRead1)
+    # path1 = BFS_Algorithm.BFS_Algorithm(width1, heigh1, dataRead1[1][0], dataRead1[1][1], data1)
+    # fillPathToData(path1, data1, dataRead1)
+    # drawDataToGrid(data1, width1, heigh1, 'BFS')
 
-    # ''' gbfs'''
-    dataRead5 = read_input(wdir)
-    width5, heigh5, data5 = makeDataSet(dataRead5)
-    start5 = Coordinate(dataRead5[1][0].x, dataRead5[1][0].y)
-    end5 = Coordinate(dataRead5[1][1].x, dataRead5[1][1].y)
-    path5 = GBFS_Algorithm.GBFS_Algorithm(dataRead5[2:], start5, end5, width5, heigh5, data5)
-    fillPathToData(path5, data5, dataRead5)
-    drawDataToGrid(data5, width5, heigh5, 'GBFS')
+    ''' gbfs'''
+    # dataRead5 = read_input(wdir)
+    # width5, heigh5, data5 = makeDataSet(dataRead5)
+    # start5 = Coordinate(dataRead5[1][0].x, dataRead5[1][0].y)
+    # end5 = Coordinate(dataRead5[1][1].x, dataRead5[1][1].y)
+    # path5 = GBFS_Algorithm.GBFS_Algorithm(dataRead5[2:], start5, end5, width5, heigh5, data5)
+    # fillPathToData(path5, data5, dataRead5)
+    # drawDataToGrid(data5, width5, heigh5, 'GBFS')
 
     ''' A* '''
-    dataRead2 = read_input(wdir)
-
-    width2, heigh2, data2 = makeDataSet(dataRead2)
-
-    path2, cost2 = AStar_Algorithm.findPathHeuristic(dataRead2[1][0], dataRead2[1][1], data2, width2, heigh2)
-
-    fillPathToData(path2, data2, dataRead2)
-    drawDataToGrid(data2, width2, heigh2, 'A*')
+    # dataRead2 = read_input(wdir)
+    #
+    # width2, heigh2, data2 = makeDataSet(dataRead2)
+    #
+    # path2, cost2 = AStar_Algorithm.findPathHeuristic(dataRead2[1][0], dataRead2[1][1], data2, width2, heigh2)
+    #
+    # fillPathToData(path2, data2, dataRead2)
+    # drawDataToGrid(data2, width2, heigh2, 'A*')
 
     # Level 3
 
@@ -254,5 +254,5 @@ if __name__ == "__main__":
         drawGrid(ax4, height4, width4)
 
         ax4.imshow(data4, interpolation='none', cmap=my_cmap, extent=[0, width4, 0, height4], origin='lower', norm=norm)
-        plt.pause(0.1)
+        plt.pause(0.2)
         plt.cla()
